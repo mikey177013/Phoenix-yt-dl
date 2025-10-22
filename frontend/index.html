@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phoenix YT Downloader - Download YouTube Videos</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-phoenix-framework"></i>
+                <div class="logo-text">
+                    <h1>Phoenix YT DL</h1>
+                    <span class="beta-tag">BETA</span>
+                </div>
+            </div>
+            <p class="tagline">Fast & Free YouTube Video Downloader</p>
+        </header>
+
+        <main class="main-content">
+            <div class="hero-section">
+                <div class="input-card">
+                    <div class="input-section">
+                        <div class="url-input-container">
+                            <div class="input-wrapper">
+                                <i class="fas fa-link input-icon"></i>
+                                <input 
+                                    type="text" 
+                                    id="youtubeUrl" 
+                                    placeholder="Paste YouTube URL here (e.g., https://www.youtube.com/watch?v=...)" 
+                                    class="url-input"
+                                >
+                            </div>
+                            <button id="analyzeBtn" class="analyze-btn">
+                                <i class="fas fa-bolt"></i>
+                                Download Now
+                            </button>
+                        </div>
+                        <div class="examples">
+                            <p><i class="fas fa-lightbulb"></i> Supported: Full videos, playlists, shorts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading" class="loading hidden">
+                <div class="loading-content">
+                    <div class="spinner"></div>
+                    <h3>Analyzing Video</h3>
+                    <p>Please wait while we process your request...</p>
+                </div>
+            </div>
+
+            <div id="error" class="error hidden">
+                <div class="error-content">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div class="error-text">
+                        <h3>Oops! Something went wrong</h3>
+                        <p id="errorMessage"></p>
+                    </div>
+                    <button class="retry-btn" onclick="hideError()">
+                        <i class="fas fa-redo"></i>
+                        Try Again
+                    </button>
+                </div>
+            </div>
+
+            <div id="result" class="result hidden">
+                <div class="result-card">
+                    <div class="video-info">
+                        <div class="thumbnail-container">
+                            <img id="thumbnail" src="" alt="Video thumbnail" class="thumbnail">
+                            <div class="thumbnail-overlay">
+                                <i class="fas fa-play"></i>
+                            </div>
+                        </div>
+                        <div class="video-details">
+                            <h3 id="videoTitle">Video Title</h3>
+                            <div class="video-stats">
+                                <span class="stat">
+                                    <i class="fas fa-download"></i>
+                                    <span id="downloadCount">0</span> formats available
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="downloads-section">
+                        <div class="section-header">
+                            <h4>
+                                <i class="fas fa-list"></i>
+                                Available Download Formats
+                            </h4>
+                            <div class="quality-filter">
+                                <button class="filter-btn active" data-filter="all">All</button>
+                                <button class="filter-btn" data-filter="audio">With Audio</button>
+                                <button class="filter-btn" data-filter="video">Video Only</button>
+                            </div>
+                        </div>
+                        
+                        <div id="downloadsList" class="downloads-list">
+                            <!-- Downloads will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="features-section">
+                <h2>Why Choose Phoenix YT DL?</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <i class="fas fa-bolt"></i>
+                        <h4>Fast Downloads</h4>
+                        <p>High-speed downloading with multiple quality options</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-shield-alt"></i>
+                        <h4>Safe & Secure</h4>
+                        <p>No registration required. Your privacy matters</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-mobile-alt"></i>
+                        <h4>Mobile Friendly</h4>
+                        <p>Works perfectly on all devices and screen sizes</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-infinity"></i>
+                        <h4>Completely Free</h4>
+                        <p>No hidden costs, no watermarks, no limits</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Phoenix YT DL</h4>
+                    <p>The ultimate YouTube video downloader</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <p>For personal use only. Respect copyright laws.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <p>If you encounter issues, please try again later.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Phoenix YT Downloader. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
