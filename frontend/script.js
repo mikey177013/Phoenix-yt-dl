@@ -9,11 +9,10 @@ class PhoenixYTDownloader {
     async checkServerStatus() {
         try {
             const response = await fetch(`${this.apiBase}/health`);
-            if (!response.ok) {
-                this.showError('Server is temporarily unavailable. Please try again later.');
-            }
+            const data = await response.json();
+            console.log('Server status:', data);
         } catch (error) {
-            console.log('Server health check:', error.message);
+            console.log('Server health check failed:', error.message);
         }
     }
 
@@ -29,7 +28,6 @@ class PhoenixYTDownloader {
             }
         });
 
-        // Quality filter buttons
         filterBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 filterBtns.forEach(b => b.classList.remove('active'));
@@ -39,7 +37,6 @@ class PhoenixYTDownloader {
             });
         });
 
-        // Clear results when input changes
         urlInput.addEventListener('input', () => {
             this.hideResult();
             this.hideError();
@@ -64,6 +61,7 @@ class PhoenixYTDownloader {
         this.hideResult();
 
         try {
+            console.log('Sending request to analyze:', url);
             const response = await fetch(`${this.apiBase}/analyze`, {
                 method: 'POST',
                 headers: {
@@ -73,6 +71,7 @@ class PhoenixYTDownloader {
             });
 
             const data = await response.json();
+            console.log('Analysis response:', data);
 
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to analyze video');
@@ -103,7 +102,6 @@ class PhoenixYTDownloader {
         const downloadsList = document.getElementById('downloadsList');
         const downloadCount = document.getElementById('downloadCount');
 
-        // Set video info
         videoTitle.textContent = data.video_title || 'Untitled Video';
         
         if (data.thumbnail) {
@@ -113,18 +111,11 @@ class PhoenixYTDownloader {
             thumbnail.style.display = 'none';
         }
 
-        // Update download count
         downloadCount.textContent = data.downloads.length;
-
-        // Clear previous downloads
         downloadsList.innerHTML = '';
 
-        // Store downloads for filtering
         this.allDownloads = data.downloads;
-
-        // Add download options
         this.filterDownloads();
-
         this.showResult();
     }
 
@@ -190,12 +181,18 @@ class PhoenixYTDownloader {
             Download
         `;
 
+        // Add data attributes for debugging
+        downloadBtn.setAttribute('data-type', download.type);
+        downloadBtn.setAttribute('data-quality', download.quality);
+
         if (download.type === 'direct') {
             downloadBtn.addEventListener('click', () => {
-                this.downloadFile(download.url, download.quality);
+                console.log('Direct download clicked:', download);
+                this.downloadFile(download.url, download.quality, 'direct');
             });
         } else {
             downloadBtn.addEventListener('click', () => {
+                console.log('Conversion download clicked:', download);
                 this.convertAndDownload(download);
             });
         }
@@ -215,6 +212,8 @@ class PhoenixYTDownloader {
             downloadBtn.classList.add('converting');
             downloadBtn.disabled = true;
 
+            console.log('Starting conversion:', download.conversion_params);
+
             const response = await fetch(`${this.apiBase}/convert`, {
                 method: 'POST',
                 headers: {
@@ -231,17 +230,22 @@ class PhoenixYTDownloader {
             });
 
             const data = await response.json();
+            console.log('Conversion response:', data);
 
             if (!response.ok) {
                 throw new Error(data.error || 'Conversion failed');
             }
 
             if (data.url) {
-                this.downloadFile(data.url, download.quality);
+                this.downloadFile(data.url, download.quality, 'converted');
+            } else if (data.result) {
+                // Some APIs return the URL in data.result
+                this.downloadFile(data.result, download.quality, 'converted');
             } else {
                 throw new Error('No download URL received from conversion');
             }
         } catch (error) {
+            console.error('Conversion error:', error);
             this.showError('Conversion failed: ' + error.message);
         } finally {
             downloadBtn.innerHTML = originalHTML;
@@ -250,34 +254,61 @@ class PhoenixYTDownloader {
         }
     }
 
-    downloadFile(url, quality) {
-        // Create a temporary link to trigger download
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
+    downloadFile(url, quality, type = 'direct') {
+        console.log('Downloading file:', { url, quality, type });
         
-        // Try to suggest a filename
-        const videoTitle = document.getElementById('videoTitle').textContent;
-        const filename = this.sanitizeFilename(`${videoTitle} - ${quality}`);
-        link.download = filename;
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Check if URL is valid
+        if (!url || !url.startsWith('http')) {
+            this.showError('Invalid download URL. Please try another quality option.');
+            return;
+        }
 
-        // Show success message
-        this.showTempMessage('Download started!', 'success');
+        try {
+            // Method 1: Direct download with suggested filename
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            
+            // Get video title for filename
+            const videoTitle = document.getElementById('videoTitle').textContent;
+            const filename = this.sanitizeFilename(`${videoTitle} - ${quality}`);
+            
+            // Try to set download attribute (may not work for cross-origin URLs)
+            link.download = filename;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Show success message
+            this.showTempMessage('Download started! Check your browser downloads.', 'success');
+
+            // Fallback: If direct download doesn't work, open in new tab
+            setTimeout(() => {
+                window.open(url, '_blank');
+            }, 1000);
+
+        } catch (error) {
+            console.error('Download error:', error);
+            // Fallback: Open in new tab
+            window.open(url, '_blank');
+            this.showTempMessage('Opening download in new tab...', 'info');
+        }
     }
 
     sanitizeFilename(filename) {
         return filename
             .replace(/[^a-z0-9áéíóúñü \.-]/gi, '_')
             .replace(/\s+/g, '_')
-            .substring(0, 100);
+            .substring(0, 100) + '.mp4';
     }
 
     showTempMessage(message, type = 'info') {
+        // Remove existing messages
+        const existingMessages = document.querySelectorAll('.temp-message');
+        existingMessages.forEach(msg => msg.remove());
+
         const messageEl = document.createElement('div');
         messageEl.className = `temp-message temp-message-${type}`;
         messageEl.textContent = message;
@@ -285,19 +316,25 @@ class PhoenixYTDownloader {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: ${type === 'success' ? '#10b981' : '#3b82f6'};
+            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
             color: white;
             padding: 12px 20px;
             border-radius: 8px;
-            z-index: 1000;
+            z-index: 10000;
             animation: slideInRight 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            max-width: 300px;
+            word-wrap: break-word;
         `;
 
         document.body.appendChild(messageEl);
 
         setTimeout(() => {
-            messageEl.remove();
-        }, 3000);
+            if (messageEl.parentNode) {
+                messageEl.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => messageEl.remove(), 300);
+            }
+        }, 4000);
     }
 
     showLoading() {
@@ -332,10 +369,11 @@ class PhoenixYTDownloader {
 
 // Initialize the app when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    new PhoenixYTDownloader();
+    window.downloader = new PhoenixYTDownloader();
+    console.log('Phoenix YT Downloader initialized');
 });
 
-// Add CSS for temporary messages
+// Add CSS for animations
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideInRight {
@@ -349,6 +387,17 @@ style.textContent = `
         }
     }
     
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
     .no-results {
         text-align: center;
         padding: 40px;
@@ -359,6 +408,17 @@ style.textContent = `
         font-size: 3rem;
         margin-bottom: 15px;
         opacity: 0.5;
+    }
+    
+    /* Debug info styling */
+    .debug-info {
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 12px;
+        margin: 10px 0;
     }
 `;
 document.head.appendChild(style);
