@@ -12,9 +12,13 @@
     "cors": "^2.8.5",
     "axios": "^1.6.0",
     "qs": "^6.11.0",
-    "cheerio": "^1.0.0-rc.12"
+    "cheerio": "^1.0.0-rc.12",
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
