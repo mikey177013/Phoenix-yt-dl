@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const YTDownloader = require('./downloader');
 
 const app = express();
@@ -9,7 +8,6 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
 
 const downloader = new YTDownloader();
 
@@ -22,6 +20,7 @@ app.post('/api/analyze', async (req, res) => {
             return res.status(400).json({ error: 'YouTube URL is required' });
         }
 
+        console.log('Analyzing URL:', url);
         const result = await downloader.analyze(url);
         res.json(result);
     } catch (error) {
@@ -38,6 +37,7 @@ app.post('/api/convert', async (req, res) => {
             return res.status(400).json({ error: 'Conversion ID is required' });
         }
 
+        console.log('Converting video:', { id, title, format });
         const result = await downloader.convert({
             youtubeUrl,
             title,
@@ -59,16 +59,57 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
         message: 'YouTube Downloader API is running',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
     });
 });
 
-// Serve frontend for all other routes
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({
+        message: 'YouTube Downloader API',
+        endpoints: {
+            health: 'GET /api/health',
+            analyze: 'POST /api/analyze',
+            convert: 'POST /api/convert'
+        },
+        usage: {
+            analyze: {
+                method: 'POST',
+                url: '/api/analyze',
+                body: { url: 'YouTube URL' }
+            },
+            convert: {
+                method: 'POST',
+                url: '/api/convert',
+                body: {
+                    youtubeUrl: 'string',
+                    title: 'string',
+                    id: 'string',
+                    ext: 'string',
+                    note: 'string',
+                    format: 'string'
+                }
+            }
+        }
+    });
+});
+
+// Handle 404
+app.use('*', (req, res) => {
+    res.status(404).json({
+        error: 'Endpoint not found',
+        availableEndpoints: [
+            'GET /',
+            'GET /api/health',
+            'POST /api/analyze',
+            'POST /api/convert'
+        ]
+    });
 });
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-    console.log(`API Health Check: http://localhost:${port}/api/health`);
+    console.log(`🚀 YouTube Downloader API running on port ${port}`);
+    console.log(`📍 Health Check: http://localhost:${port}/api/health`);
+    console.log(`📍 API Root: http://localhost:${port}/`);
 });
